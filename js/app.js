@@ -77,8 +77,20 @@
       xp: raw.xp || 0,
       streak: raw.streak || { last: '', count: 0 },
       tourSeen: !!raw.tourSeen,
+      // Lịch: classDays theo Date.getDay() (0 = Chủ Nhật … 6 = Thứ Bảy); marks = { 'YYYY-MM-DD': ghi chú }
+      cal: { classDays: [1, 5], marks: {}, ...(raw.cal || {}) },
+      // Nhật ký học: { 'YYYY-MM-DD': số lượt học xong trong ngày }
+      days: raw.days || seedDays(raw.streak),
       settings: { ...DEFAULTS, ...(raw.settings || {}) },
     };
+  }
+  /** Người dùng cũ chưa có nhật ký: dựng lại các ngày gần nhất từ chuỗi ngày học. */
+  function seedDays(streak) {
+    const out = {};
+    if (!streak || !streak.last || !streak.count) return out;
+    const [y, m, d] = streak.last.split('-').map(Number);
+    for (let i = 0; i < Math.min(streak.count, 60); i++) out[dayKey(new Date(y, m - 1, d - i))] = 1;
+    return out;
   }
   const S = loadState();
   function save() {
@@ -763,6 +775,7 @@
     const gained = s.xp + bonus;
     S.xp += gained;
     touchStreak();
+    S.days[dayKey()] = (S.days[dayKey()] || 0) + 1;
     save();
 
     const acc = s.firstTotal ? Math.round((s.firstOk / s.firstTotal) * 100) : 100;
@@ -948,6 +961,12 @@
     },
     {
       view: 'home',
+      sel: '.cal-fab',
+      title: 'Lịch học',
+      text: 'Chạm vào tờ lịch ở góc phải để xem ngày tháng. Ngày có lịch học được <b>khoanh tròn</b>; bạn đổi được lịch học hằng tuần và đánh dấu ⭐ ngày quan trọng.',
+    },
+    {
+      view: 'home',
       sel: '.hero [data-act="tour"]',
       title: 'Sẵn sàng rồi!',
       text: 'Muốn xem lại hướng dẫn, bấm nút này bất cứ lúc nào. Mỗi ngày học một chút, khu vườn sẽ nở đầy hoa 🌻',
@@ -1070,6 +1089,7 @@
   function startTour() {
     if (tour) return;
     closeModal();
+    closeCal();
     stopPlaylist();
     Speech.stop();
     if (!S.tourSeen) {
@@ -1102,6 +1122,156 @@
   window.addEventListener('scroll', placeTour, { passive: true });
 
   /* ------------------------------------------------------------------ */
+  /* Lịch nổi ở góc phải                                                 */
+  /* ------------------------------------------------------------------ */
+  const DOW_NAMES = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+  const DOW_SHORT = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+  const WEEK = [1, 2, 3, 4, 5, 6, 0]; // tuần bắt đầu từ Thứ Hai
+
+  let calOpen = false;
+  let calView = null; // { y, m } tháng đang xem
+  let calSel = null; // 'YYYY-MM-DD' ngày đang chọn
+
+  const midnight = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const fromKey = (k) => {
+    const [y, m, d] = k.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
+  const isClassDay = (d) => S.cal.classDays.includes(d.getDay());
+  const fullDate = (d) => `${DOW_NAMES[d.getDay()]}, ngày ${d.getDate()} tháng ${d.getMonth() + 1} năm ${d.getFullYear()}`;
+  const daysFromToday = (d) => Math.round((midnight(d) - midnight(new Date())) / 864e5);
+  function relDay(d) {
+    const n = daysFromToday(d);
+    if (n === 0) return 'Hôm nay';
+    if (n === 1) return 'Ngày mai';
+    if (n === -1) return 'Hôm qua';
+    return n > 0 ? `Còn ${n} ngày nữa` : `${-n} ngày trước`;
+  }
+  function nextClass() {
+    const t = midnight(new Date());
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(t.getFullYear(), t.getMonth(), t.getDate() + i);
+      if (isClassDay(d)) return d;
+    }
+    return null;
+  }
+
+  function mountCal() {
+    const box = document.createElement('div');
+    box.id = 'cal';
+    box.innerHTML = `<div class="cal-pop" role="dialog" aria-label="Lịch" hidden></div>
+      <button class="cal-fab" data-act="cal-toggle" aria-haspopup="dialog"></button>`;
+    document.body.appendChild(box);
+  }
+
+  function renderCal() {
+    const now = new Date();
+    const todayK = dayKey(now);
+    const fab = $('.cal-fab');
+    fab.innerHTML = `<span class="cal-fab-top">Tháng ${now.getMonth() + 1}</span>
+      <span class="cal-fab-day ${isClassDay(now) ? 'ring' : ''}">${now.getDate()}</span>
+      <span class="cal-fab-dow">${DOW_NAMES[now.getDay()]}</span>`;
+    fab.setAttribute('aria-expanded', calOpen);
+    fab.setAttribute('aria-label', `${calOpen ? 'Đóng' : 'Mở'} lịch. Hôm nay là ${fullDate(now)}`);
+    const pop = $('.cal-pop');
+    pop.hidden = !calOpen;
+    if (!calOpen) return;
+
+    const { y, m } = calView;
+    const offset = (new Date(y, m, 1).getDay() + 6) % 7;
+    const inMonth = new Date(y, m + 1, 0).getDate();
+    const rows = Math.ceil((offset + inMonth) / 7);
+    let cells = '';
+    for (let i = 0; i < rows * 7; i++) {
+      const d = new Date(y, m, 1 - offset + i);
+      const k = dayKey(d);
+      const marked = S.cal.marks[k] !== undefined;
+      const cls = ['cal-day'];
+      if (d.getMonth() !== m) cls.push('out');
+      if (k === todayK) cls.push('today');
+      if (isClassDay(d)) cls.push('class');
+      if (marked) cls.push('mark');
+      if (k === calSel) cls.push('sel');
+      const label = `${fullDate(d)}${isClassDay(d) ? ', có lịch học' : ''}${marked ? ', ngày quan trọng' : ''}`;
+      cells += `<button class="${cls.join(' ')}" data-act="cal-day" data-date="${k}" aria-label="${esc(label)}" aria-pressed="${k === calSel}">
+        <span class="cal-num">${d.getDate()}</span>${marked ? '<i class="cal-star">⭐</i>' : ''}${S.days[k] ? '<i class="cal-sprout">🌱</i>' : ''}
+      </button>`;
+    }
+
+    const sel = fromKey(calSel);
+    const note = S.cal.marks[calSel];
+    const tags = [];
+    if (isClassDay(sel)) tags.push('<span class="cal-tag class">📚 Có lịch học</span>');
+    if (note !== undefined) tags.push(`<span class="cal-tag mark">⭐ ${esc(note || 'Ngày quan trọng')}</span>`);
+    if (S.days[calSel]) tags.push(`<span class="cal-tag done">🌱 Đã học ${S.days[calSel]} lượt</span>`);
+    if (!tags.length) tags.push('<span class="cal-tag">Không có lịch gì</span>');
+
+    const nc = nextClass();
+    const ncText = !nc
+      ? 'Chưa chọn ngày học nào trong tuần'
+      : daysFromToday(nc) === 0
+        ? 'Hôm nay có buổi học! 📚'
+        : `Buổi học tới: ${DOW_NAMES[nc.getDay()]} ${nc.getDate()}/${nc.getMonth() + 1} · ${
+            daysFromToday(nc) === 1 ? 'ngày mai' : `còn ${daysFromToday(nc)} ngày`
+          }`;
+
+    pop.innerHTML = `
+      <div class="cal-head">
+        <button class="icon-btn" data-act="cal-prev" aria-label="Tháng trước">‹</button>
+        <button class="cal-title" data-act="cal-today" title="Về hôm nay">Tháng ${m + 1} <small>${y}</small></button>
+        <button class="icon-btn" data-act="cal-next" aria-label="Tháng sau">›</button>
+      </div>
+      <p class="cal-next">${ncText}</p>
+      <div class="cal-grid" role="grid">
+        ${WEEK.map((w) => `<span class="cal-dow ${S.cal.classDays.includes(w) ? 'class' : ''}">${DOW_SHORT[w]}</span>`).join('')}
+        ${cells}
+      </div>
+      <div class="cal-detail">
+        <b>${fullDate(sel)}</b>
+        <small>${relDay(sel)}</small>
+        <div class="cal-tags">${tags.join('')}</div>
+        ${
+          note !== undefined
+            ? '<button class="btn ghost small" data-act="cal-unmark">Bỏ đánh dấu ⭐</button>'
+            : `<form class="cal-mark" data-form="cal-mark" autocomplete="off">
+                <input id="cal-note" type="text" maxlength="40" placeholder="Ghi chú, vd: Thi thử" aria-label="Ghi chú cho ngày quan trọng">
+                <button type="submit" class="btn sun small">⭐ Đánh dấu</button>
+              </form>`
+        }
+      </div>
+      <div class="cal-week">
+        <span>Lịch học hằng tuần</span>
+        <div class="cal-chips">
+          ${WEEK.map(
+            (w) =>
+              `<button class="cal-chip ${S.cal.classDays.includes(w) ? 'on' : ''}" data-act="cal-dow" data-dow="${w}" aria-pressed="${S.cal.classDays.includes(
+                w
+              )}" aria-label="${DOW_NAMES[w]}">${DOW_SHORT[w]}</button>`
+          ).join('')}
+        </div>
+      </div>
+      <p class="cal-legend"><i class="lg-ring"></i> lịch học <span>⭐ ngày quan trọng</span> <span>🌱 ngày đã học</span></p>`;
+  }
+
+  function openCal() {
+    const now = new Date();
+    calOpen = true;
+    calView = { y: now.getFullYear(), m: now.getMonth() };
+    calSel = dayKey(now);
+    renderCal();
+  }
+  function closeCal() {
+    if (!calOpen) return;
+    calOpen = false;
+    renderCal();
+  }
+  function shiftMonth(delta) {
+    const d = new Date(calView.y, calView.m + delta, 1);
+    calView = { y: d.getFullYear(), m: d.getMonth() };
+    renderCal();
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Sự kiện                                                             */
   /* ------------------------------------------------------------------ */
   const deckById = (id) => LESSONS.flatMap((l) => l.decks).find((d) => d.id === id);
@@ -1124,6 +1294,30 @@
     },
     settings: openSettings,
     'modal-close': closeModal,
+    'cal-toggle': () => (calOpen ? closeCal() : openCal()),
+    'cal-prev': () => shiftMonth(-1),
+    'cal-next': () => shiftMonth(1),
+    'cal-today': () => openCal(),
+    'cal-day': (el) => {
+      calSel = el.dataset.date;
+      const d = fromKey(calSel);
+      calView = { y: d.getFullYear(), m: d.getMonth() }; // bấm ngày của tháng kề thì chuyển sang tháng đó
+      renderCal();
+    },
+    'cal-dow': (el) => {
+      const w = Number(el.dataset.dow);
+      const set = new Set(S.cal.classDays);
+      if (set.has(w)) set.delete(w);
+      else set.add(w);
+      S.cal.classDays = [...set].sort();
+      save();
+      renderCal();
+    },
+    'cal-unmark': () => {
+      delete S.cal.marks[calSel];
+      save();
+      renderCal();
+    },
     tour: startTour,
     'tour-next': () => tour && showTourStep(tour.i + 1),
     'tour-prev': () => tour && showTourStep(tour.i - 1),
@@ -1143,6 +1337,7 @@
           S.words = {};
           S.xp = 0;
           S.streak = { last: '', count: 0 };
+          S.days = {};
           save();
           toast('Đã xoá tiến độ. Bắt đầu lại nào! 🌱');
           route();
@@ -1224,13 +1419,24 @@
   }
 
   document.addEventListener('click', (e) => {
+    // Phải xét trước khi chạy hành động: lịch vẽ lại sẽ gỡ phần tử vừa bấm khỏi trang.
+    const inCal = !!e.target.closest('#cal');
     const el = e.target.closest('[data-act]');
-    if (!el || el.disabled) return;
-    const fn = ACTIONS[el.dataset.act];
-    if (fn) fn(el, e);
+    if (el && !el.disabled) {
+      const fn = ACTIONS[el.dataset.act];
+      if (fn) fn(el, e);
+    }
+    if (calOpen && !inCal) closeCal(); // bấm ra ngoài thì đóng lịch
   });
 
   document.addEventListener('submit', (e) => {
+    if (e.target.dataset.form === 'cal-mark') {
+      e.preventDefault();
+      S.cal.marks[calSel] = $('#cal-note').value.trim();
+      save();
+      renderCal();
+      return;
+    }
     if (e.target.dataset.form !== 'type') return;
     e.preventDefault();
     const st = sess && sess.steps[sess.i];
@@ -1252,6 +1458,10 @@
       return;
     }
     if (e.key === 'Escape' && $('#modal-root').innerHTML) return closeModal();
+    if (e.key === 'Escape' && calOpen) {
+      closeCal();
+      return $('.cal-fab').focus();
+    }
     if (!sess || $('#modal-root').innerHTML || e.repeat) return;
     const st = sess.steps[sess.i];
     if (!st) return;
@@ -1295,6 +1505,10 @@
     if (tour && !tour.busy) removeTour();
     closeModal();
     stopPlaylist();
+    // Trong phiên học thì ẩn lịch để không che nút bấm.
+    document.body.classList.toggle('studying', hash === '#/study');
+    calOpen = false;
+    renderCal();
     if (hash === '#/study') {
       if (sess) return renderStep();
       return go('#/');
@@ -1315,5 +1529,6 @@
     // danh sách giọng thường về muộn; cập nhật lại hộp cài đặt nếu đang mở
     if ($('.settings')) openSettings();
   });
+  mountCal();
   route();
 })();

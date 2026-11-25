@@ -16,6 +16,17 @@ Nút **📖 Hướng dẫn** (ở trang chủ, và trên thanh công cụ khi m�
 
 Nội dung các bước nằm trong mảng `TOUR` của `js/app.js`.
 
+## Lịch nổi
+
+Tờ lịch nhỏ ở góc phải dưới luôn hiện ngày hôm nay; bấm vào để mở lịch tháng.
+
+- Ngày có **lịch học** được khoanh tròn. Mặc định là Thứ Hai và Thứ Sáu (`classDays: [1, 5]` trong `loadState` của `js/app.js`); mỗi người tự đổi được bằng hàng nút T2…CN trong lịch.
+- Bấm vào một ngày để xem đầy đủ thứ, ngày, tháng, năm và còn bao nhiêu ngày nữa.
+- **⭐ Đánh dấu** một ngày quan trọng kèm ghi chú (ví dụ ngày thi thử).
+- 🌱 hiện trên những ngày đã học xong ít nhất một lượt.
+
+Lịch học, ngày đánh dấu và nhật ký học cũng lưu trong trình duyệt của từng người.
+
 ## Chạy thử trên máy
 
 Mở tệp `index.html` bằng Chrome, Edge hoặc Safari.
