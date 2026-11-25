@@ -10,6 +10,12 @@ Trang tĩnh thuần HTML/CSS/JavaScript, không cần máy chủ hay bước bui
 - 2 bài bổ trợ: 21 cụm từ hay gặp trong bài thi và 63 liên từ / giới từ.
 - Tổng cộng 954 mục từ.
 
+## Hướng dẫn cho người mới
+
+Nút **📖 Hướng dẫn** (ở trang chủ, và trên thanh công cụ khi màn hình rộng) chạy một vòng giới thiệu 12 bước: trang chủ → danh sách từ → thẻ từ → câu hỏi → thanh công cụ. Mỗi bước làm sáng đúng phần đang được giải thích; có thể bấm **Bỏ qua**, dùng phím ← → hoặc Esc. Phần "xem thử" thẻ từ và câu hỏi không ghi gì vào tiến độ học.
+
+Nội dung các bước nằm trong mảng `TOUR` của `js/app.js`.
+
 ## Chạy thử trên máy
 
 Mở tệp `index.html` bằng Chrome, Edge hoặc Safari.

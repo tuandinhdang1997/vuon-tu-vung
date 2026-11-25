@@ -76,6 +76,7 @@
       words: raw.words || {},
       xp: raw.xp || 0,
       streak: raw.streak || { last: '', count: 0 },
+      tourSeen: !!raw.tourSeen,
       settings: { ...DEFAULTS, ...(raw.settings || {}) },
     };
   }
@@ -258,6 +259,7 @@
         <span class="brand-name">Vườn Từ</span>
       </a>
       <div class="top-actions">
+        <button class="btn ghost small tour-top" data-act="tour">📖 Hướng dẫn</button>
         <span class="chip" title="Chuỗi ngày học liên tiếp">🔥 <b>${streakNow()}</b></span>
         <span class="chip" title="Điểm kinh nghiệm">⭐ <b>${S.xp}</b></span>
         <button class="icon-btn ${S.settings.music ? 'on' : ''}" data-act="toggle-music" aria-pressed="${S.settings.music}"
@@ -304,7 +306,9 @@
 
     let bubble, mood;
     if (!learned) {
-      bubble = 'Xin chào! Mình là <b>Mầm</b> 🌱 Cùng gieo những hạt từ vựng đầu tiên nhé!';
+      bubble = S.tourSeen
+        ? 'Xin chào! Mình là <b>Mầm</b> 🌱 Cùng gieo những hạt từ vựng đầu tiên nhé!'
+        : 'Xin chào! Mình là <b>Mầm</b> 🌱 Lần đầu tới đây à? Bấm <b>📖 Hướng dẫn</b> để mình dẫn bạn đi một vòng nhé!';
       mood = 'happy';
     } else if (due.length) {
       bubble = `Có <b>${due.length} cây</b> đang khát nước! Ôn lại để chúng lớn nhanh nào 💧`;
@@ -322,6 +326,7 @@
           nd.words[0].lesson.label
         )} <small>${esc(nd.name)}</small></button>`
       : `<div class="all-done">🎉 Bạn đã gieo hết tất cả các từ!</div>`;
+    const tourBtn = `<button class="btn big ${S.tourSeen ? 'ghost' : 'sun pulse'}" data-act="tour">📖 Hướng dẫn</button>`;
 
     const main = LESSONS.filter((l) => !l.bonus);
     const bonus = LESSONS.filter((l) => l.bonus);
@@ -332,7 +337,7 @@
           <div class="hero-mascot">${mascot(mood)}</div>
           <div class="hero-body">
             <p class="bubble">${bubble}</p>
-            <div class="hero-cta">${reviewBtn}${learnBtn}</div>
+            <div class="hero-cta">${reviewBtn}${learnBtn}${tourBtn}</div>
           </div>
         </section>
 
@@ -667,7 +672,7 @@
 
     // Khung phản hồi nằm ngay dưới các đáp án để không che lên chúng.
     app.innerHTML = sessionShell(prompt + body + '<div id="feedback"></div>');
-    if (t === 'mc-en-vi' && S.settings.autoSpeak) say(w);
+    if (t === 'mc-en-vi' && S.settings.autoSpeak && sess.mode !== 'demo') say(w);
     if (t.startsWith('listen')) say(w);
     const input = $('#type-input');
     if (input) input.focus();
@@ -870,6 +875,233 @@
   });
 
   /* ------------------------------------------------------------------ */
+  /* Hướng dẫn cho người mới                                             */
+  /* ------------------------------------------------------------------ */
+  // Mỗi bước: màn hình cần mở (view), phần tử được làm sáng (sel), tiêu đề và lời dẫn.
+  const TOUR = [
+    {
+      view: 'home',
+      sel: null,
+      title: 'Chào mừng đến Vườn Từ! 🌱',
+      text: 'Mình là <b>Mầm</b>. Mình sẽ dẫn bạn đi một vòng quanh khu vườn từ vựng, chỉ mất khoảng 1 phút thôi.',
+    },
+    {
+      view: 'home',
+      sel: '.hero-cta',
+      title: 'Bắt đầu nhanh',
+      text: 'Nút xanh lá đưa bạn vào ngay bài đang học dở. Khi có từ đến hạn ôn, nút <b>💧 Tưới cây</b> sẽ hiện ở đây.',
+    },
+    {
+      view: 'home',
+      sel: '.pots',
+      title: 'Khu vườn của bạn',
+      text: 'Mỗi từ là một cái cây. Ôn đúng thì cây lớn dần: 🌱 → 🌿 → 🪴 → 🌷 → 🌻. Trả lời sai thì cây lùi một cấp và sớm được hỏi lại.',
+    },
+    {
+      view: 'home',
+      sel: '.lesson-card',
+      title: 'Các buổi học',
+      text: 'Từ vựng chia theo từng buổi giống trên lớp. Chạm vào một buổi để xem danh sách từ; thanh xanh cho biết bạn đã học được bao nhiêu.',
+    },
+    {
+      view: 'lesson',
+      sel: '.word-row',
+      title: 'Nghe phát âm',
+      text: 'Chạm vào bất kỳ từ nào để nghe đọc. Dòng màu tím là <b>phiên âm IPA</b>, biểu tượng bên phải là cấp độ cây của từ đó.',
+    },
+    {
+      view: 'lesson',
+      sel: '[data-act="toggle-vi"]',
+      title: 'Tự kiểm tra',
+      text: 'Bấm <b>🙈 Ẩn nghĩa</b> để che phần tiếng Việt, rồi thử nhớ lại nghĩa của từng từ.',
+    },
+    {
+      view: 'lesson',
+      sel: '.deck-actions',
+      title: 'Ba cách học',
+      text: () =>
+        `<b>🌱 Học từ mới</b>: mỗi lượt ${S.settings.batch} từ, có thẻ và câu hỏi.<br><b>🎯 Luyện tập</b>: làm bài nhanh, không ảnh hưởng lịch ôn.<br><b>▶ Nghe lần lượt</b>: nghe cả danh sách.`,
+    },
+    {
+      view: 'card',
+      sel: '.flash',
+      title: 'Thẻ từ',
+      text: 'Mỗi từ mới hiện trên một tấm thẻ kèm phiên âm và được đọc to. <b>Chạm vào thẻ</b> để lật xem nghĩa.',
+    },
+    {
+      view: 'card',
+      sel: '.audio-btns',
+      title: 'Nghe lại và đọc theo',
+      text: '<b>🔊</b> để nghe lại, <b>🐢</b> để nghe chậm từng âm. Hãy đọc theo thành tiếng nhé!',
+    },
+    {
+      view: 'q',
+      sel: '.opts',
+      title: 'Câu hỏi',
+      text: 'Sau vài thẻ sẽ có câu hỏi: chọn nghĩa, nghe rồi chọn, hoặc gõ lại từ. Trả lời sai không sao cả, từ đó sẽ được hỏi lại.',
+    },
+    {
+      view: 'home',
+      sel: '.top-actions',
+      title: 'Thanh công cụ',
+      text: '<b>🔥</b> số ngày học liên tiếp, <b>⭐</b> điểm của bạn.<br><b>🎵</b> bật / tắt nhạc nền.<br><b>⚙️</b> chọn giọng Anh-Anh hay Anh-Mỹ, tốc độ đọc và số từ mỗi lượt.',
+    },
+    {
+      view: 'home',
+      sel: '.hero [data-act="tour"]',
+      title: 'Sẵn sàng rồi!',
+      text: 'Muốn xem lại hướng dẫn, bấm nút này bất cứ lúc nào. Mỗi ngày học một chút, khu vườn sẽ nở đầy hoa 🌻',
+    },
+  ];
+
+  let tour = null; // { i, view, busy }
+
+  /** Chuyển màn hình trong lúc hướng dẫn và chờ màn hình mới dựng xong. */
+  function tourNav(hash) {
+    return new Promise((resolve) => {
+      const done = () => setTimeout(resolve, 40);
+      if ((location.hash || '#/') === hash) {
+        route();
+        done();
+      } else {
+        window.addEventListener('hashchange', done, { once: true });
+        location.hash = hash;
+      }
+    });
+  }
+
+  /** Phiên học "xem thử": chỉ để minh hoạ, không lưu gì vào tiến độ. */
+  function tourDemo(i) {
+    const lesson = LESSONS[0];
+    const deck = lesson.decks[0];
+    const w = deck.words[0];
+    sess = {
+      mode: 'demo',
+      title: `${lesson.label} · ${deck.name} (xem thử)`,
+      back: '#/',
+      deck,
+      words: [w],
+      steps: [
+        { kind: 'card', w },
+        { kind: 'q', type: 'mc-en-vi', w },
+      ],
+      i,
+      done: i,
+      total: 4,
+      firstTotal: 0,
+      firstOk: 0,
+      xp: 0,
+      missed: new Set(),
+    };
+    return tourNav('#/study');
+  }
+
+  const TOUR_VIEWS = {
+    home: () => tourNav('#/'),
+    lesson: () => tourNav(`#/lesson/${LESSONS[0].id}`),
+    card: () => tourDemo(0),
+    q: () => tourDemo(1),
+  };
+
+  function placeTour() {
+    if (!tour) return;
+    const step = TOUR[tour.i];
+    const hole = $('.tour-hole');
+    const tip = $('.tour-tip');
+    const el = step.sel ? document.querySelector(step.sel) : null;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const tw = tip.offsetWidth;
+    const th = tip.offsetHeight;
+    const px = (n) => `${Math.round(n)}px`;
+    if (!el) {
+      hole.classList.add('none');
+      Object.assign(hole.style, { left: px(vw / 2), top: px(vh / 2), width: '0px', height: '0px' });
+      Object.assign(tip.style, { left: px((vw - tw) / 2), top: px(Math.max(12, (vh - th) / 2)) });
+      return;
+    }
+    hole.classList.remove('none');
+    const r = el.getBoundingClientRect();
+    const pad = 8;
+    Object.assign(hole.style, {
+      left: px(r.left - pad),
+      top: px(r.top - pad),
+      width: px(r.width + pad * 2),
+      height: px(r.height + pad * 2),
+    });
+    // Đặt lời dẫn ở phía còn nhiều chỗ trống hơn (dưới hoặc trên phần được làm sáng).
+    const below = vh - r.bottom;
+    const above = r.top;
+    let top = below >= th + 30 || below >= above ? r.bottom + 20 : r.top - th - 20;
+    top = Math.min(Math.max(12, top), vh - th - 12);
+    const left = Math.min(Math.max(12, r.left + r.width / 2 - tw / 2), vw - tw - 12);
+    Object.assign(tip.style, { left: px(left), top: px(top) });
+  }
+
+  async function showTourStep(i) {
+    if (!tour || tour.busy || i < 0 || i >= TOUR.length) return;
+    const step = TOUR[i];
+    if (tour.view !== step.view) {
+      tour.busy = true;
+      await TOUR_VIEWS[step.view]();
+      if (!tour) return;
+      tour.busy = false;
+      tour.view = step.view;
+    }
+    tour.i = i;
+    const last = i === TOUR.length - 1;
+    const text = typeof step.text === 'function' ? step.text() : step.text;
+    $('.tour-tip').innerHTML = `
+      <span class="bar" aria-hidden="true"><i style="width:${Math.round(((i + 1) / TOUR.length) * 100)}%"></i></span>
+      <div class="tour-head">${mascot(last ? 'cheer' : 'happy', 'mascot-sm')}<h3>${step.title}</h3></div>
+      <p>${text}</p>
+      <div class="tour-foot">
+        <span class="tour-count">${i + 1}/${TOUR.length}</span>
+        ${last ? '' : '<button class="btn ghost small" data-act="tour-end">Bỏ qua</button>'}
+        ${i > 0 ? '<button class="btn ghost small" data-act="tour-prev" aria-label="Bước trước">←</button>' : ''}
+        <button class="btn mint small" id="tour-next" data-act="${last ? 'tour-end' : 'tour-next'}">${last ? 'Bắt đầu học 🌱' : 'Tiếp →'}</button>
+      </div>`;
+    const el = step.sel ? document.querySelector(step.sel) : null;
+    if (el) el.scrollIntoView({ block: 'center', behavior: 'auto' });
+    placeTour();
+    $('#tour-next').focus({ preventScroll: true });
+  }
+
+  function startTour() {
+    if (tour) return;
+    closeModal();
+    stopPlaylist();
+    Speech.stop();
+    if (!S.tourSeen) {
+      S.tourSeen = true;
+      save();
+    }
+    const box = document.createElement('div');
+    box.id = 'tour';
+    box.innerHTML =
+      '<div class="tour-block"></div><div class="tour-hole none"></div><div class="tour-tip" role="dialog" aria-label="Hướng dẫn sử dụng"></div>';
+    document.body.appendChild(box);
+    tour = { i: 0, view: null, busy: false };
+    showTourStep(0);
+  }
+
+  function removeTour() {
+    const box = $('#tour');
+    if (box) box.remove();
+    tour = null;
+    if (sess && sess.mode === 'demo') sess = null;
+    Speech.stop();
+  }
+
+  function endTour() {
+    removeTour();
+    go('#/');
+  }
+
+  window.addEventListener('resize', placeTour);
+  window.addEventListener('scroll', placeTour, { passive: true });
+
+  /* ------------------------------------------------------------------ */
   /* Sự kiện                                                             */
   /* ------------------------------------------------------------------ */
   const deckById = (id) => LESSONS.flatMap((l) => l.decks).find((d) => d.id === id);
@@ -892,6 +1124,10 @@
     },
     settings: openSettings,
     'modal-close': closeModal,
+    tour: startTour,
+    'tour-next': () => tour && showTourStep(tour.i + 1),
+    'tour-prev': () => tour && showTourStep(tour.i - 1),
+    'tour-end': endTour,
     'test-voice': (el) => {
       const accent = el.dataset.accent;
       if (!Speech.hasVoices()) return toast('Thiết bị chưa có giọng đọc tiếng Anh.');
@@ -1005,6 +1241,16 @@
   });
 
   document.addEventListener('keydown', (e) => {
+    if (tour) {
+      // Trong lúc hướng dẫn, bàn phím chỉ điều khiển hướng dẫn.
+      const onButton = e.target.closest('button');
+      if (e.key === 'Escape') endTour();
+      else if (e.repeat) return;
+      else if (e.key === 'ArrowRight' || (e.key === 'Enter' && !onButton)) ACTIONS[tour.i === TOUR.length - 1 ? 'tour-end' : 'tour-next']();
+      else if (e.key === 'ArrowLeft') ACTIONS['tour-prev']();
+      else if (e.key === ' ' && !onButton) e.preventDefault();
+      return;
+    }
     if (e.key === 'Escape' && $('#modal-root').innerHTML) return closeModal();
     if (!sess || $('#modal-root').innerHTML || e.repeat) return;
     const st = sess.steps[sess.i];
@@ -1045,6 +1291,8 @@
 
   function route() {
     const hash = location.hash || '#/';
+    // Người dùng tự rời trang (nút Back…) giữa lúc hướng dẫn → kết thúc hướng dẫn.
+    if (tour && !tour.busy) removeTour();
     closeModal();
     stopPlaylist();
     if (hash === '#/study') {

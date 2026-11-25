@@ -995,6 +995,75 @@ button {
   font-size: 0.9rem;
 }
 
+/* ---------- hướng dẫn cho người mới ---------- */
+#tour {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+.tour-block {
+  position: absolute;
+  inset: 0;
+}
+
+.tour-hole {
+  position: fixed;
+  border-radius: 22px;
+  box-shadow: 0 0 0 200vmax rgba(58, 44, 78, 0.62);
+  outline: 4px solid var(--sun);
+  pointer-events: none;
+  transition: left 0.3s, top 0.3s, width 0.3s, height 0.3s;
+}
+
+.tour-hole.none { outline: none; }
+
+.tour-tip {
+  position: fixed;
+  width: min(390px, calc(100vw - 24px));
+  padding: 14px 16px 16px;
+  background: var(--card);
+  border: 3px solid var(--sun);
+  border-bottom-width: 7px;
+  border-radius: 24px;
+  box-shadow: 0 16px 40px rgba(58, 44, 78, 0.35);
+  transition: left 0.3s, top 0.3s;
+}
+
+.tour-tip .bar { margin: 0 0 10px; height: 8px; }
+
+.tour-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tour-head .mascot { width: 54px; flex: none; }
+.tour-head h3 { font-size: 1.25rem; }
+.tour-tip p { margin: 8px 0 14px; font-weight: 700; line-height: 1.5; }
+
+.tour-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tour-count {
+  margin-right: auto;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.tour-top { margin-right: 4px; }
+
+.btn.pulse { animation: pulse 1.4s ease-in-out infinite; }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 201, 77, 0.75); }
+  50% { box-shadow: 0 0 0 12px rgba(255, 201, 77, 0); }
+}
+
 /* ---------- thông báo & pháo giấy ---------- */
 #toast {
   position: fixed;
@@ -1038,6 +1107,7 @@ button {
 @media (max-width: 640px) {
   body { font-size: 16px; }
   .f2, .f5 { display: none; }
+  .tour-top { display: none; }
   .float { opacity: 0.3; }
   .topbar { padding-left: 12px; padding-right: 12px; }
   .brand { gap: 6px; }
