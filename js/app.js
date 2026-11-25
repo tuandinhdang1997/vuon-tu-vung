@@ -817,12 +817,39 @@
   /* ------------------------------------------------------------------ */
   /* Cài đặt                                                             */
   /* ------------------------------------------------------------------ */
+  /** Tên giọng gọn gàng: "Microsoft Sonia Online (Natural) - English (United Kingdom)" → "Sonia ✨". */
+  function voiceLabel(v) {
+    const q = Speech.quality(v);
+    const name = v.name
+      .replace(/^Microsoft\s+/i, '')
+      .replace(/\s+-\s+English.*$/i, '')
+      .replace(/\s*Online\s*\(Natural\)/i, '')
+      .replace(/\s*\((Enhanced|Premium)\)/i, '')
+      .trim();
+    return `${name}${q === 'good' ? ' ✨' : q === 'robot' ? ' (giọng máy)' : ''}`;
+  }
+
   function voiceOptions(accent, current) {
-    const list = Speech.list(accent);
+    const all = Speech.list(accent);
+    const hasNice = all.some((v) => Speech.quality(v) !== 'robot');
+    // Máy có giọng tốt thì ẩn các giọng máy đời cũ (vẫn giữ giọng người dùng đã tự chọn trước đó).
+    const list = hasNice ? all.filter((v) => Speech.quality(v) !== 'robot' || v.name === current) : all;
+    const auto = Speech.auto(accent);
     return (
-      `<option value="">Tự động chọn giọng tốt nhất</option>` +
-      list.map((v) => `<option value="${esc(v.name)}" ${v.name === current ? 'selected' : ''}>${esc(v.name)}</option>`).join('')
+      `<option value="">Tự động${auto ? `: ${esc(voiceLabel(auto))}` : ''}</option>` +
+      list.map((v) => `<option value="${esc(v.name)}" ${v.name === current ? 'selected' : ''}>${esc(voiceLabel(v))}</option>`).join('')
     );
+  }
+
+  /** Cảnh báo khi trình duyệt chỉ có giọng máy đời cũ cho tiếng Anh. */
+  function voiceWarning() {
+    if (!Speech.supported) return '<p class="warn">Trình duyệt này không hỗ trợ giọng đọc. Hãy dùng Edge, Chrome hoặc Safari.</p>';
+    if (!Speech.hasVoices()) return '';
+    const robotOnly = ['us', 'uk'].filter((a) => Speech.quality(Speech.auto(a)) === 'robot');
+    if (!robotOnly.length) return '';
+    return `<p class="warn">Trình duyệt này chỉ có giọng máy đời cũ cho ${
+      robotOnly.length === 2 ? 'tiếng Anh' : robotOnly[0] === 'us' ? 'giọng Anh-Mỹ' : 'giọng Anh-Anh'
+    }, nghe sẽ hơi "robot". Mở trang bằng <b>Microsoft Edge</b> trên máy tính để có giọng đọc tự nhiên ✨.</p>`;
   }
 
   function openSettings() {
@@ -848,7 +875,7 @@
           <button class="btn ghost small" data-act="test-voice" data-accent="uk">▶ Nghe thử Anh-Anh</button>
         </div>
         <label class="field check"><input type="checkbox" data-set="autoSpeak" ${st.autoSpeak ? 'checked' : ''}><span>Tự đọc khi hiện từ mới</span></label>
-        ${Speech.supported ? '' : '<p class="warn">Trình duyệt này không hỗ trợ giọng đọc. Hãy dùng Chrome, Edge hoặc Safari.</p>'}
+        ${voiceWarning()}
 
         <h3>🎵 Âm thanh</h3>
         <label class="field check"><input type="checkbox" data-set="music" ${st.music ? 'checked' : ''}><span>Nhạc nền vui vẻ</span></label>

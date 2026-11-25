@@ -199,7 +199,9 @@
   const synth = window.speechSynthesis;
   const LANG = { us: 'en-US', uk: 'en-GB' };
   const GOOD = /natural|neural|premium|enhanced|siri/i;
-  const NICE = /google|samantha|ava|allison|susan|daniel|kate|serena|stephanie|aria|jenny|michelle|sonia|libby|ryan|guy|zira|hazel/i;
+  const NICE = /samantha|ava|allison|daniel|kate|serena|stephanie|aria|jenny|michelle|sonia|libby|ryan|guy/i;
+  // Giọng máy đời cũ: giọng SAPI cài sẵn của Windows (tên "Microsoft …" mà không có "Online"/"Natural") và eSpeak.
+  const LEGACY = /^microsoft (?!.*(online|natural))|espeak/i;
   const BAD = /compact|eloquence|albert|bad news|bahh|bells|boing|bubbles|cellos|whisper|zarvox|trinoids|organ|jester|wobble|fred|junior|ralph|kathy|superstar|good news|grandma|grandpa|rocko|shelley|sandy|flo|eddy|reed/i;
 
   let voices = [];
@@ -219,15 +221,23 @@
     else synth.onvoiceschanged = refreshVoices;
   }
 
+  /** Xếp loại một giọng: 'good' (tự nhiên), 'ok' (tạm được), 'robot' (giọng máy đời cũ / giọng đùa). */
+  function quality(v) {
+    if (BAD.test(v.name) || LEGACY.test(v.name)) return 'robot';
+    if (GOOD.test(v.name) || /google/i.test(v.name)) return 'good';
+    return 'ok';
+  }
+
   function score(v, accent) {
     const lang = langOf(v).toLowerCase();
     let s = 0;
     if (lang === LANG[accent].toLowerCase()) s += 100;
     else if (accent === 'uk' && /en-(au|ie|nz|za|in)/.test(lang)) s += 30;
     else if (accent === 'us' && /en-ca/.test(lang)) s += 30;
-    if (GOOD.test(v.name)) s += 50;
-    if (NICE.test(v.name)) s += 25;
-    if (BAD.test(v.name)) s -= 90;
+    const q = quality(v);
+    if (q === 'good') s += GOOD.test(v.name) ? 60 : 40; // giọng tự nhiên > giọng Google
+    if (q === 'robot') s -= 90;
+    if (q !== 'robot' && NICE.test(v.name)) s += 15;
     // giọng đa ngữ / giọng trẻ em đọc từ đơn kém ổn định hơn giọng thuần tiếng Anh
     if (/multilingual/i.test(v.name)) s -= 10;
     if (/\bana\b/i.test(v.name)) s -= 30;
@@ -244,11 +254,16 @@
     hasVoices() {
       return voices.length > 0;
     },
+    quality,
     list(accent) {
       const want = LANG[accent].toLowerCase();
       return voices
         .filter((v) => langOf(v).toLowerCase() === want)
         .sort((a, b) => score(b, accent) - score(a, accent));
+    },
+    /** Giọng tốt nhất máy đang có cho kiểu giọng này (không xét lựa chọn của người dùng). */
+    auto(accent) {
+      return [...voices].sort((a, b) => score(b, accent) - score(a, accent))[0] || null;
     },
     pick(accent) {
       const name = this.preferred[accent];
@@ -256,7 +271,7 @@
         const hit = voices.find((v) => v.name === name);
         if (hit) return hit;
       }
-      return [...voices].sort((a, b) => score(b, accent) - score(a, accent))[0] || null;
+      return this.auto(accent);
     },
     stop() {
       speakToken++;
