@@ -1,4 +1,5 @@
-/* Vườn Từ — ứng dụng học từ vựng theo buổi. Không cần máy chủ, dữ liệu lưu trong trình duyệt. */
+/* Vườn từ của cô Vân Anh — ứng dụng học từ vựng theo buổi. Không cần máy chủ, dữ liệu lưu trong trình duyệt.
+ * © 2026 Vườn từ của cô Vân Anh. Bảo lưu mọi quyền. Không sao chép, phân phối hoặc chạy lại khi chưa được phép (xem tệp LICENSE). */
 (() => {
   'use strict';
 
@@ -375,6 +376,7 @@
         <footer class="foot">
           Tiến độ được lưu ngay trên thiết bị này${memoryOnly ? ' (trình duyệt đang chặn lưu trữ nên sẽ mất khi đóng trang)' : ''}.
           Phát âm dùng giọng đọc có sẵn của trình duyệt.
+          <span class="copyright">© 2026 Vườn từ của cô Vân Anh · Bảo lưu mọi quyền. Không sao chép hoặc chạy lại trang này khi chưa được phép.</span>
         </footer>
       </main>`;
   }

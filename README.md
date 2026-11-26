@@ -61,6 +61,12 @@ python -I tools/build_data.py "đường/dẫn/tới/file.xlsx"
 
 Các chỗ sửa lỗi so với file gốc (phiên âm, nghĩa, chính tả) nằm trong bảng `FIXES` ở đầu script; emoji minh hoạ nằm trong bảng `EMOJI`.
 
+## Bản quyền
+
+© 2026 Vườn từ của cô Vân Anh. Bảo lưu mọi quyền.
+
+Kho mã này công khai chỉ để vận hành trang web chính thức; đây **không** phải mã nguồn mở. Khi chưa có sự đồng ý bằng văn bản của chủ sở hữu, không được sao chép, tải về để chạy lại, triển khai lại ở địa chỉ khác, phân phối hay dùng lại mã nguồn, giao diện và nội dung bài học. Xem tệp [LICENSE](LICENSE).
+
 ## Ghi chú
 
 - **Phát âm** dùng giọng đọc có sẵn của trình duyệt (Web Speech API), nên chất lượng phụ thuộc thiết bị. Nghe hay nhất trên Edge, Chrome và Safari; có thể chọn giọng và tốc độ trong ⚙️ Cài đặt.

@@ -1,3 +1,4 @@
+/* © 2026 Vườn từ của cô Vân Anh. Bảo lưu mọi quyền. Không sao chép, phân phối hoặc chạy lại khi chưa được phép (xem tệp LICENSE). */
 :root {
   --bg: #fff6e6;
   --ink: #4a3b5c;
@@ -264,6 +265,12 @@ button {
   text-align: center;
   color: var(--muted);
   font-size: 0.88rem;
+}
+
+.copyright {
+  display: block;
+  margin-top: 6px;
+  font-weight: 700;
 }
 
 /* ---------- nút ---------- */

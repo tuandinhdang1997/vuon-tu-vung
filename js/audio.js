@@ -1,4 +1,5 @@
-/* Âm thanh: nhạc nền tự tạo bằng Web Audio, hiệu ứng, và giọng đọc (Web Speech). */
+/* Âm thanh: nhạc nền tự tạo bằng Web Audio, hiệu ứng, và giọng đọc (Web Speech).
+ * © 2026 Vườn từ của cô Vân Anh. Bảo lưu mọi quyền. Không sao chép, phân phối hoặc chạy lại khi chưa được phép (xem tệp LICENSE). */
 (() => {
   'use strict';
 

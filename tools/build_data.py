@@ -462,7 +462,9 @@ def main():
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps({"lessons": lessons}, ensure_ascii=False, separators=(",", ":"))
-    OUT.write_text("// Tệp sinh tự động bởi tools/build_data.py — đừng sửa tay.\nwindow.VOCAB = "
+    OUT.write_text("// Tệp sinh tự động bởi tools/build_data.py — đừng sửa tay.\n"
+                   "// © 2026 Vườn từ của cô Vân Anh. Bảo lưu mọi quyền. Không sao chép, phân phối hoặc dùng lại "
+                   "nội dung bài học khi chưa được phép (xem tệp LICENSE).\nwindow.VOCAB = "
                    + payload + ";\n", encoding="utf-8")
     print(f"Đã ghi {OUT} ({OUT.stat().st_size // 1024} KB)")
 
