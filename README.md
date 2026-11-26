@@ -27,6 +27,8 @@ Tờ lịch nhỏ ở góc phải dưới luôn hiện ngày hôm nay; bấm và
 
 Lịch học, ngày đánh dấu và nhật ký học cũng lưu trong trình duyệt của từng người.
 
+Ngay phía trên tờ lịch là nút Facebook mở nhóm của lớp trong tab mới. Đổi đường dẫn ở hằng `CLASS_GROUP_URL` trong `js/app.js`.
+
 ## Chạy thử trên máy
 
 Mở tệp `index.html` bằng Chrome, Edge hoặc Safari.

@@ -1080,6 +1080,26 @@ button {
 #cal > * { pointer-events: auto; }
 body.studying #cal { display: none; }
 
+/* nút nhóm Facebook của lớp, nằm ngay trên tờ lịch */
+.fb-fab {
+  width: 54px;
+  height: 54px;
+  margin-right: 9px; /* canh giữa theo tờ lịch bên dưới */
+  display: grid;
+  place-items: center;
+  background: #1877f2;
+  border: 3px solid #fff;
+  border-bottom: 6px solid #0e5fc9;
+  border-radius: 50%;
+  box-shadow: 0 6px 16px rgba(24, 119, 242, 0.35);
+  transition: transform 0.15s;
+}
+
+.fb-fab svg { width: 34px; height: 34px; display: block; }
+.fb-fab:hover { transform: scale(1.08) rotate(-6deg); }
+.fb-fab:active { transform: translateY(3px); border-bottom-width: 3px; }
+.cal-pop:not([hidden]) ~ .fb-fab { display: none; } /* nhường chỗ khi lịch đang mở */
+
 /* tờ lịch nhỏ: luôn hiện ngày hôm nay */
 .cal-fab {
   width: 72px;
@@ -1395,6 +1415,8 @@ body.studying #cal { display: none; }
   .tour-top { display: none; }
   #cal { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); }
   .cal-fab { width: 64px; }
+  .fb-fab { width: 48px; height: 48px; margin-right: 8px; }
+  .fb-fab svg { width: 30px; height: 30px; }
   .cal-fab-top { font-size: 0.66rem; letter-spacing: 0; }
   .cal-fab-day { width: 40px; height: 40px; font-size: 1.6rem; }
   .cal-pop { max-height: calc(100vh - 124px); max-height: calc(100dvh - 124px); }

@@ -988,9 +988,9 @@
     },
     {
       view: 'home',
-      sel: '.cal-fab',
-      title: 'Lịch học',
-      text: 'Chạm vào tờ lịch ở góc phải để xem ngày tháng. Ngày có lịch học được <b>khoanh tròn</b>; bạn đổi được lịch học hằng tuần và đánh dấu ⭐ ngày quan trọng.',
+      sel: '#cal',
+      title: 'Lịch học và nhóm lớp',
+      text: 'Chạm vào tờ lịch ở góc phải để xem ngày tháng. Ngày có lịch học được <b>khoanh tròn</b>; bạn đổi được lịch học hằng tuần và đánh dấu ⭐ ngày quan trọng. Nút xanh phía trên mở <b>nhóm Facebook của lớp</b>.',
     },
     {
       view: 'home',
@@ -1151,6 +1151,9 @@
   /* ------------------------------------------------------------------ */
   /* Lịch nổi ở góc phải                                                 */
   /* ------------------------------------------------------------------ */
+  // Nhóm Facebook của lớp: nút tròn ngay phía trên tờ lịch dẫn tới đây.
+  const CLASS_GROUP_URL = 'https://www.facebook.com/groups/1618454816289788/';
+
   const DOW_NAMES = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
   const DOW_SHORT = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
   const WEEK = [1, 2, 3, 4, 5, 6, 0]; // tuần bắt đầu từ Thứ Hai
@@ -1187,6 +1190,10 @@
     const box = document.createElement('div');
     box.id = 'cal';
     box.innerHTML = `<div class="cal-pop" role="dialog" aria-label="Lịch" hidden></div>
+      <a class="fb-fab" href="${CLASS_GROUP_URL}" target="_blank" rel="noopener noreferrer"
+        aria-label="Mở nhóm lớp trên Facebook (tab mới)" title="Nhóm lớp trên Facebook">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M13.6 21.5v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5h1.6V4.1c-.3 0-1.3-.1-2.4-.1-2.3 0-3.9 1.4-3.9 4v2.4H7.8v3.1h2.7v8z"/></svg>
+      </a>
       <button class="cal-fab" data-act="cal-toggle" aria-haspopup="dialog"></button>`;
     document.body.appendChild(box);
   }
