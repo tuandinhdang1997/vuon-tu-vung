@@ -321,15 +321,17 @@
           this.works = true;
           this.failed = false;
         };
-        const guard = setTimeout(() => finish(true), 9000);
-        // Không thấy bắt đầu đọc sau 4 giây (và không bị lệnh đọc khác chen vào) → coi như trình duyệt không đọc được.
+        const guard = setTimeout(() => finish(started), 15000);
+        // Không thấy bắt đầu đọc sau 8 giây (và không bị lệnh đọc khác chen vào) → coi như trình duyệt không đọc được.
+        // KHÔNG huỷ lệnh đọc: lần đọc đầu tiên trên điện thoại có thể rất chậm (công cụ giọng nói của máy
+        // phải khởi động hoặc tải dữ liệu), huỷ sớm sẽ khiến máy không bao giờ kịp đọc. Nếu sau đó máy
+        // đọc được thì sự kiện bắt đầu/kết thúc sẽ tự xoá cờ lỗi.
         const watchdog = setTimeout(() => {
           if (started || done || token !== speakToken) return;
-          if (synth.speaking) return markStarted(); // đang đọc nhưng trình duyệt không báo sự kiện bắt đầu
+          if (synth.speaking || synth.pending) return; // máy vẫn đang xử lý: chờ tiếp, không kết luận gì
           this.failed = true;
-          synth.cancel();
           finish(false);
-        }, 4000);
+        }, 8000);
         u.onstart = markStarted;
         u.onend = () => {
           if (!started) markStarted(); // có trình duyệt chỉ báo lúc đọc xong
