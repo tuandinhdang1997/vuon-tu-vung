@@ -1426,9 +1426,9 @@ body.studying #cal { display: none; }
   .brand { gap: 6px; }
   .mascot-logo { width: 34px; }
   .brand-name { font-size: 1.15rem; }
-  .chip { padding: 5px 8px; font-size: 0.85rem; }
-  .icon-btn { width: 40px; height: 40px; }
-  .top-actions { gap: 6px; }
+  .chip { padding: 5px 7px; font-size: 0.82rem; gap: 2px; }
+  .icon-btn { width: 38px; height: 38px; }
+  .top-actions { gap: 5px; }
   .hero { flex-direction: column; text-align: center; padding: 18px 16px; }
   .hero .mascot { width: 120px; }
   .bubble::before { left: 50%; top: -8px; margin-left: -10px; }
@@ -1466,6 +1466,19 @@ body.studying #cal { display: none; }
   .feedback .btn { flex: 1 1 100%; }
   .fb-mascot .mascot { width: 48px; }
   .done-screen h1 { font-size: 1.6rem; }
+}
+
+/* Màn hình hẹp: tên trang xuống hai dòng ("Vườn từ" / "của cô Vân Anh") để vừa thanh trên cùng. */
+@media (max-width: 860px) {
+  .brand { min-width: 0; }
+  .mascot-logo { flex: none; }
+  .brand-name { line-height: 1.02; }
+  .brand-sub { display: block; font-size: 0.6em; white-space: nowrap; }
+}
+
+/* Điện thoại rất hẹp: ẩn ô điểm để tên trang không bị che khi điểm và chuỗi ngày lên nhiều chữ số. */
+@media (max-width: 380px) {
+  .chip-xp { display: none; }
 }
 
 @media (max-width: 350px) {

@@ -266,14 +266,14 @@
   /* ------------------------------------------------------------------ */
   function topbar() {
     return `<header class="topbar">
-      <a class="brand" href="#/" aria-label="Trang chủ Vườn Từ">
+      <a class="brand" href="#/" aria-label="Trang chủ Vườn từ của cô Vân Anh">
         ${mascot('happy', 'mascot-logo')}
-        <span class="brand-name">Vườn Từ</span>
+        <span class="brand-name">Vườn từ <span class="brand-sub">của cô Vân Anh</span></span>
       </a>
       <div class="top-actions">
         <button class="btn ghost small tour-top" data-act="tour">📖 Hướng dẫn</button>
         <span class="chip" title="Chuỗi ngày học liên tiếp">🔥 <b>${streakNow()}</b></span>
-        <span class="chip" title="Điểm kinh nghiệm">⭐ <b>${S.xp}</b></span>
+        <span class="chip chip-xp" title="Điểm kinh nghiệm">⭐ <b>${S.xp}</b></span>
         <button class="icon-btn ${S.settings.music ? 'on' : ''}" data-act="toggle-music" aria-pressed="${S.settings.music}"
           aria-label="${S.settings.music ? 'Tắt nhạc nền' : 'Bật nhạc nền'}" title="Nhạc nền">${S.settings.music ? '🎵' : '🔇'}</button>
         <button class="icon-btn" data-act="settings" aria-label="Cài đặt" title="Cài đặt">⚙️</button>
@@ -922,7 +922,7 @@
     {
       view: 'home',
       sel: null,
-      title: 'Chào mừng đến Vườn Từ! 🌱',
+      title: 'Chào mừng đến Vườn từ của cô Vân Anh! 🌱',
       text: 'Mình là <b>Mầm</b>. Mình sẽ dẫn bạn đi một vòng quanh khu vườn từ vựng, chỉ mất khoảng 1 phút thôi.',
     },
     {
